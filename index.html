@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BUYOL - YKS Takip Sistemi</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --text-main: #334155;
+      --text-muted: #64748B;
+      --primary: #6366F1;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      padding: 24px 16px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .brand-title {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: 4px;
+      color: #4F46E5;
+      margin-bottom: 4px;
+    }
+    .brand-sub {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 992px) {
+      .container { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+      border: 1px solid #E2E8F0;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      color: #1E293B;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #64748B;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 16px 0 8px 0;
+      padding-bottom: 4px;
+      border-bottom: 1.5px solid #F1F5F9;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: #475569;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s;
+    }
+    input:focus, select:focus {
+      border-color: #818CF8;
+      box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #6366F1, #818CF8);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 16px;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.95; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .chart-container {
+      position: relative;
+      height: 480px;
+      width: 100%;
+    }
+
+    .tab-buttons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .tab-btn {
+      padding: 8px 16px;
+      border: 1px solid #CBD5E1;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      color: #475569;
+    }
+    .tab-btn.active {
+      background: #4F46E5;
+      color: white;
+      border-color: #4F46E5;
+    }
+    .status-msg {
+      font-size: 13px;
+      margin-top: 10px;
+      text-align: center;
+      display: none;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="brand-title">BUYOL</div>
+    <div class="brand-sub">Haftalık Soru Takip & Gelişim Analizi</div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h2>Veri Girişi</h2>
+      <form id="trackForm">
+        <div class="form-group">
+          <label for="studentName">Öğrenci Adı Soyadı</label>
+          <input type="text" id="studentName" required placeholder="Adınızı giriniz">
+        </div>
+
+        <div class="form-group">
+          <label for="weekSelect">Hafta Seçimi</label>
+          <select id="weekSelect" required></select>
+        </div>
+
+        <div class="section-title">TYT Çözülen Soru Sayıları</div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="tytTurkce">Türkçe</label>
+            <input type="number" id="tytTurkce" min="0" placeholder="0" required>
+          </div>
+          <div class="form-group">
+            <label for="tytSosyal">Sosyal</label>
+            <input type="number" id="tytSosyal" min="0" placeholder="0" required>
+          </div>
+          <div class="form-group">
+            <label for="tytMat">Matematik</label>
+            <input type="number" id="tytMat" min="0" placeholder="0" required>
+          </div>
+          <div class="form-group">
+            <label for="tytFen">Fen</label>
+            <input type="number" id="tytFen" min="0" placeholder="0" required>
+          </div>
+        </div>
+
+        <div class="section-title">AYT Çözülen Soru Sayıları</div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="aytEdebiyat">Edebiyat</label>
+            <input type="number" id="aytEdebiyat" min="0" placeholder="0" required>
+          </div>
+          <div class="form-group">
+            <label for="aytSosyal">Sosyal</label>
+            <input type="number" id="aytSosyal" min="0" placeholder="0" required>
+          </div>
+          <div class="form-group">
+            <label for="aytMat">Matematik</label>
+            <input type="number" id="aytMat" min="0" placeholder="0" required>
+          </div>
+          <div class="form-group">
+            <label for="aytFen">Fen</label>
+            <input type="number" id="aytFen" min="0" placeholder="0" required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn" id="saveBtn">Haftalık Veriyi Kaydet & Çiz</button>
+        <div class="status-msg" id="statusMsg"></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+        <h2 id="chartHeading" style="margin: 0;">Haftalık Soru Gelişimi</h2>
+        <div class="tab-buttons">
+          <button class="tab-btn active" id="btnShowTyt">TYT Görünümü</button>
+          <button class="tab-btn" id="btnShowAyt">AYT Görünümü</button>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="questionChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbxXc4066IINgD63XkiQJgojqAy-_gy4uEMZAiXfJ_o2Qwe38w3pmPqeZigmQQHdquGP/exec";
+
+    const weekSelect = document.getElementById('weekSelect');
+    const weeks = [];
+    for (let i = 1; i <= 40; i++) {
+      const w = `${i}. Hafta`;
+      weeks.push(w);
+      const opt = document.createElement('option');
+      opt.value = w;
+      opt.textContent = w;
+      weekSelect.appendChild(opt);
+    }
+
+    const datasetsTYT = {
+      turkce: new Array(40).fill(null),
+      sosyal: new Array(40).fill(null),
+      mat: new Array(40).fill(null),
+      fen: new Array(40).fill(null)
+    };
+
+    const datasetsAYT = {
+      edebiyat: new Array(40).fill(null),
+      sosyal: new Array(40).fill(null),
+      mat: new Array(40).fill(null),
+      fen: new Array(40).fill(null)
+    };
+
+    let activeTab = 'TYT';
+
+    const pastelColors = {
+      turkce: { border: '#60A5FA', bg: 'rgba(96, 165, 250, 0.15)' },
+      sosyal: { border: '#F472B6', bg: 'rgba(244, 114, 182, 0.15)' },
+      mat: { border: '#34D399', bg: 'rgba(52, 211, 153, 0.15)' },
+      fen: { border: '#A78BFA', bg: 'rgba(167, 139, 250, 0.15)' }
+    };
+
+    const ctx = document.getElementById('questionChart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: weeks,
+        datasets: []
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        tension: 0.35,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `${ctx.dataset.label}: ${ctx.raw} Soru`
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'Çözülen Soru Sayısı' },
+            grid: { color: '#F1F5F9' }
+          },
+          x: {
+            grid: { display: false }
+          }
+        }
+      }
+    });
+
+    function renderChartData() {
+      if (activeTab === 'TYT') {
+        chart.data.datasets = [
+          { label: 'TYT Türkçe', data: datasetsTYT.turkce, borderColor: pastelColors.turkce.border, backgroundColor: pastelColors.turkce.bg, fill: true },
+          { label: 'TYT Sosyal', data: datasetsTYT.sosyal, borderColor: pastelColors.sosyal.border, backgroundColor: pastelColors.sosyal.bg, fill: true },
+          { label: 'TYT Mat', data: datasetsTYT.mat, borderColor: pastelColors.mat.border, backgroundColor: pastelColors.mat.bg, fill: true },
+          { label: 'TYT Fen', data: datasetsTYT.fen, borderColor: pastelColors.fen.border, backgroundColor: pastelColors.fen.bg, fill: true }
+        ];
+      } else {
+        chart.data.datasets = [
+          { label: 'AYT Edebiyat', data: datasetsAYT.edebiyat, borderColor: pastelColors.turkce.border, backgroundColor: pastelColors.turkce.bg, fill: true },
+          { label: 'AYT Sosyal', data: datasetsAYT.sosyal, borderColor: pastelColors.sosyal.border, backgroundColor: pastelColors.sosyal.bg, fill: true },
+          { label: 'AYT Mat', data: datasetsAYT.mat, borderColor: pastelColors.mat.border, backgroundColor: pastelColors.mat.bg, fill: true },
+          { label: 'AYT Fen', data: datasetsAYT.fen, borderColor: pastelColors.fen.border, backgroundColor: pastelColors.fen.bg, fill: true }
+        ];
+      }
+      chart.update();
+    }
+
+    renderChartData();
+
+    document.getElementById('btnShowTyt').addEventListener('click', function() {
+      activeTab = 'TYT';
+      this.classList.add('active');
+      document.getElementById('btnShowAyt').classList.remove('active');
+      renderChartData();
+    });
+
+    document.getElementById('btnShowAyt').addEventListener('click', function() {
+      activeTab = 'AYT';
+      this.classList.add('active');
+      document.getElementById('btnShowTyt').classList.remove('active');
+      renderChartData();
+    });
+
+    document.getElementById('trackForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const name = document.getElementById('studentName').value;
+      const selectedWeek = document.getElementById('weekSelect').value;
+      const weekIndex = parseInt(selectedWeek) - 1;
+
+      const tTurkce = parseInt(document.getElementById('tytTurkce').value) || 0;
+      const tSosyal = parseInt(document.getElementById('tytSosyal').value) || 0;
+      const tMat = parseInt(document.getElementById('tytMat').value) || 0;
+      const tFen = parseInt(document.getElementById('tytFen').value) || 0;
+
+      const aEdebiyat = parseInt(document.getElementById('aytEdebiyat').value) || 0;
+      const aSosyal = parseInt(document.getElementById('aytSosyal').value) || 0;
+      const aMat = parseInt(document.getElementById('aytMat').value) || 0;
+      const aFen = parseInt(document.getElementById('aytFen').value) || 0;
+
+      datasetsTYT.turkce[weekIndex] = tTurkce;
+      datasetsTYT.sosyal[weekIndex] = tSosyal;
+      datasetsTYT.mat[weekIndex] = tMat;
+      datasetsTYT.fen[weekIndex] = tFen;
+
+      datasetsAYT.edebiyat[weekIndex] = aEdebiyat;
+      datasetsAYT.sosyal[weekIndex] = aSosyal;
+      datasetsAYT.mat[weekIndex] = aMat;
+      datasetsAYT.fen[weekIndex] = aFen;
+
+      document.getElementById('chartHeading').textContent = `${name} - Soru Gelişim Grafiği`;
+      renderChartData();
+
+      const statusMsg = document.getElementById('statusMsg');
+      const saveBtn = document.getElementById('saveBtn');
+      statusMsg.style.display = 'block';
+      statusMsg.style.color = '#4F46E5';
+      statusMsg.textContent = 'Google E-Tabloya kaydediliyor...';
+      saveBtn.disabled = true;
+
+      const payload = {
+        studentName: name,
+        week: selectedWeek,
+        tytTurkce: tTurkce, tytSosyal: tSosyal, tytMat: tMat, tytFen: tFen,
+        aytEdebiyat: aEdebiyat, aytSosyal: aSosyal, aytMat: aMat, aytFen: aFen
+      };
+
+      fetch(GOOGLE_SHEETS_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(() => {
+        statusMsg.style.color = '#059669';
+        statusMsg.textContent = '✓ Veriler kaydedildi ve grafik güncellendi!';
+        saveBtn.disabled = false;
+      }).catch(() => {
+        statusMsg.style.color = '#D97706';
+        statusMsg.textContent = 'Grafik güncellendi (Bağlantı kontrol ediliyor).';
+        saveBtn.disabled = false;
+      });
+    });
+  </script>
+</body>
+</html>

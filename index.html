@@ -318,7 +318,7 @@
 
   <script>
     // Tablonuza bağlı güncel Apps Script Web Uygulaması URL'si
-    const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbreunVIjPVF4Gtj4-lqXRKCSPvO6iTxA9_B9gB24ofZQaIxxuT34IQgYuaVLs60ZQK/exec";
+    const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbxreunVIjPVF4Gtj4-lqXRKCSPvO6iTxA9_B9gB24ofZQaIxxuT34IQgYuaVLs60ZQK/exec";
 
     const STUDENTS_DATABASE = {
       "12-A Proje": [
@@ -425,7 +425,7 @@
     };
 
     let activeTab = 'TYT';
-    const studentCache = {}; // Hızlı önbellek nesnesi
+    const studentCache = {};
 
     const pastelColors = {
       turkce: { border: '#60A5FA', bg: 'rgba(96, 165, 250, 0.15)' },
@@ -544,161 +544,4 @@
 
       statusMsg.style.display = 'block';
       statusMsg.style.color = '#10B981';
-      statusMsg.textContent = `✓ Hoş geldin ${selectedStudentName}!`;
-      
-      entrySection.style.display = 'block';
-      fetchHistoryBtn.style.display = 'inline-block';
-      document.getElementById('chartHeading').textContent = `${selectedStudentName} (${selectedClass}) - Soru Gelişimi`;
-    });
-
-    function populateChartWithData(dataList) {
-      for (let i = 0; i < 40; i++) {
-        datasetsTYT.turkce[i] = null; datasetsTYT.sosyal[i] = null;
-        datasetsTYT.mat[i] = null; datasetsTYT.fen[i] = null;
-        datasetsAYT.edebiyat[i] = null; datasetsAYT.sosyal[i] = null;
-        datasetsAYT.mat[i] = null; datasetsAYT.fen[i] = null;
-        datasetsAYT.dil[i] = null;
-      }
-
-      dataList.forEach(item => {
-        const weekIndex = parseInt(item.week) - 1;
-        if (weekIndex >= 0 && weekIndex < 40) {
-          datasetsTYT.turkce[weekIndex] = item.tytTurkce;
-          datasetsTYT.sosyal[weekIndex] = item.tytSosyal;
-          datasetsTYT.mat[weekIndex] = item.tytMat;
-          datasetsTYT.fen[weekIndex] = item.tytFen;
-
-          datasetsAYT.edebiyat[weekIndex] = item.aytEdebiyat;
-          datasetsAYT.sosyal[weekIndex] = item.aytSosyal;
-          datasetsAYT.mat[weekIndex] = item.aytMat;
-          datasetsAYT.fen[weekIndex] = item.aytFen;
-          datasetsAYT.dil[weekIndex] = item.aytDil;
-        }
-      });
-      renderChartData();
-    }
-
-    // 2. GEÇMİŞİ GETİR (Önbellek Destekli Turbo Çekim)
-    fetchHistoryBtn.addEventListener('click', function() {
-      const selectedStudentName = studentSelect.value;
-      
-      // Eğer bu oturumda verisi daha önce çekildiyse beklemeden önbellekten getir
-      if (studentCache[selectedStudentName]) {
-        populateChartWithData(studentCache[selectedStudentName]);
-        statusMsg.textContent = `✓ Geçmiş verileriniz anında yüklendi.`;
-        return;
-      }
-
-      fetchHistoryBtn.disabled = true;
-      fetchHistoryBtn.textContent = 'Yükleniyor...';
-
-      const oldScript = document.getElementById('jsonpScript');
-      if (oldScript) oldScript.remove();
-
-      window.handleSheetsResponse = function(response) {
-        fetchHistoryBtn.disabled = false;
-        fetchHistoryBtn.textContent = '📊 Geçmiş Verilerimi Getir';
-
-        if (response && response.status === 'success' && response.data && response.data.length > 0) {
-          studentCache[selectedStudentName] = response.data; // Önbelleğe al
-          populateChartWithData(response.data);
-          statusMsg.textContent = `✓ ${response.data.length} haftalık geçmiş veriniz yüklendi.`;
-        } else {
-          statusMsg.textContent = 'Daha önce kaydedilmiş geçmiş veri bulunamadı.';
-        }
-
-        const s = document.getElementById('jsonpScript');
-        if (s) s.remove();
-      };
-
-      const script = document.createElement('script');
-      script.id = 'jsonpScript';
-      script.src = `${GOOGLE_SHEETS_URL}?action=read&name=${encodeURIComponent(selectedStudentName)}&callback=handleSheetsResponse`;
-      document.body.appendChild(script);
-    });
-
-    // 3. ANINDA KAYDETME
-    window.handleSaveResponse = function(res) {
-      statusMsg.style.display = 'block';
-      statusMsg.style.color = '#10B981';
-      statusMsg.textContent = '✓ Veriler başarıyla Google E-Tabloya yazıldı!';
-      const s = document.getElementById('jsonpSaveScript');
-      if (s) s.remove();
-    };
-
-    document.getElementById('trackForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-
-      const selectedClass = classSelect.value;
-      const selectedStudentName = studentSelect.value;
-      const selectedWeek = weekSelect.value;
-      const weekIndex = parseInt(selectedWeek) - 1;
-
-      const tTurkce = parseInt(document.getElementById('tytTurkce').value) || 0;
-      const tSosyal = parseInt(document.getElementById('tytSosyal').value) || 0;
-      const tMat = parseInt(document.getElementById('tytMat').value) || 0;
-      const tFen = parseInt(document.getElementById('tytFen').value) || 0;
-
-      const aEdebiyat = parseInt(document.getElementById('aytEdebiyat').value) || 0;
-      const aSosyal = parseInt(document.getElementById('aytSosyal').value) || 0;
-      const aMat = parseInt(document.getElementById('aytMat').value) || 0;
-      const aFen = parseInt(document.getElementById('aytFen').value) || 0;
-      const aDil = parseInt(document.getElementById('aytDil').value) || 0;
-
-      // Anında grafiğe ekle
-      datasetsTYT.turkce[weekIndex] = tTurkce;
-      datasetsTYT.sosyal[weekIndex] = tSosyal;
-      datasetsTYT.mat[weekIndex] = tMat;
-      datasetsTYT.fen[weekIndex] = tFen;
-
-      datasetsAYT.edebiyat[weekIndex] = aEdebiyat;
-      datasetsAYT.sosyal[weekIndex] = aSosyal;
-      datasetsAYT.mat[weekIndex] = aMat;
-      datasetsAYT.fen[weekIndex] = aFen;
-      datasetsAYT.dil[weekIndex] = aDil;
-
-      renderChartData();
-
-      // Önbelleği güncelle
-      if (!studentCache[selectedStudentName]) {
-        studentCache[selectedStudentName] = [];
-      }
-      studentCache[selectedStudentName] = studentCache[selectedStudentName].filter(item => item.week !== selectedWeek);
-      studentCache[selectedStudentName].push({
-        week: selectedWeek,
-        tytTurkce: tTurkce, tytSosyal: tSosyal, tytMat: tMat, tytFen: tFen,
-        aytEdebiyat: aEdebiyat, aytSosyal: aSosyal, aytMat: aMat, aytFen: aFen, aytDil: aDil
-      });
-
-      statusMsg.style.display = 'block';
-      statusMsg.style.color = '#0072CE';
-      statusMsg.textContent = 'Google E-Tabloya kaydediliyor...';
-
-      const oldScript = document.getElementById('jsonpSaveScript');
-      if (oldScript) oldScript.remove();
-
-      const params = new URLSearchParams({
-        action: 'save',
-        studentName: selectedStudentName,
-        studentClass: selectedClass,
-        week: selectedWeek,
-        tytTurkce: tTurkce,
-        tytSosyal: tSosyal,
-        tytMat: tMat,
-        tytFen: tFen,
-        aytEdebiyat: aEdebiyat,
-        aytSosyal: aSosyal,
-        aytMat: aMat,
-        aytFen: aFen,
-        aytDil: aDil,
-        callback: 'handleSaveResponse'
-      });
-
-      const script = document.createElement('script');
-      script.id = 'jsonpSaveScript';
-      script.src = `${GOOGLE_SHEETS_URL}?${params.toString()}`;
-      document.body.appendChild(script);
-    });
-  </script>
-</body>
-</html>
+      statusMsg.textContent

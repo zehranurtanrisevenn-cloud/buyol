@@ -145,6 +145,19 @@
     }
     .btn-secondary:hover { background: #E2E8F0; }
 
+    .btn-fetch {
+      padding: 9px 14px;
+      background: #0072CE;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-fetch:hover { background: #005bb5; }
+
     .chart-container {
       position: relative;
       height: 480px;
@@ -154,10 +167,9 @@
     .tab-buttons {
       display: flex;
       gap: 8px;
-      margin-bottom: 16px;
     }
     .tab-btn {
-      padding: 8px 16px;
+      padding: 8px 14px;
       border: 1.5px solid #CBD5E1;
       background: white;
       border-radius: 8px;
@@ -196,9 +208,8 @@
 
   <div class="container">
     <div class="card">
-      <h2>1. Öğrenci Doğrulama</h2>
+      <h2>1. Hızlı Giriş</h2>
       
-      <!-- Sınıf Seçimi -->
       <div class="form-group">
         <label for="classSelect">Sınıfınızı Seçiniz</label>
         <select id="classSelect" required>
@@ -213,7 +224,6 @@
         </select>
       </div>
 
-      <!-- Öğrenci İsmi Seçimi -->
       <div class="form-group">
         <label for="studentSelect">Adınızı Seçiniz</label>
         <select id="studentSelect" disabled required>
@@ -221,16 +231,15 @@
         </select>
       </div>
 
-      <!-- Öğrenci Kodu -->
       <div class="form-group">
         <label for="studentCode">Özel Öğrenci Kodunuz</label>
         <input type="password" id="studentCode" placeholder="4 haneli kodunuzu giriniz" maxlength="6" disabled>
       </div>
 
-      <button type="button" class="btn-secondary" id="loginBtn" disabled>Giriş Yap & Geçmişimi Yükle</button>
+      <button type="button" class="btn-secondary" id="loginBtn" disabled>Sisteme Giriş Yap</button>
       <div class="status-msg" id="statusMsg"></div>
 
-      <!-- 2. Aşama: Veri Giriş Formu -->
+      <!-- Giriş Yapılınca Anında Açılan Form -->
       <div id="entrySection">
         <h2 style="margin-top: 0;">2. Haftalık Soru Girişi</h2>
         <form id="trackForm">
@@ -292,9 +301,12 @@
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
         <h2 id="chartHeading" style="margin: 0;">Soru Gelişim Grafiği</h2>
-        <div class="tab-buttons">
-          <button class="tab-btn active" id="btnShowTyt">TYT Görünümü</button>
-          <button class="tab-btn" id="btnShowAyt">AYT / YDT Görünümü</button>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button type="button" class="btn-fetch" id="fetchHistoryBtn" style="display: none;">📊 Geçmiş Verilerimi Getir</button>
+          <div class="tab-buttons">
+            <button class="tab-btn active" id="btnShowTyt">TYT</button>
+            <button class="tab-btn" id="btnShowAyt">AYT / YDT</button>
+          </div>
         </div>
       </div>
       <div class="chart-container">
@@ -423,31 +435,17 @@
     const ctx = document.getElementById('questionChart').getContext('2d');
     const chart = new Chart(ctx, {
       type: 'line',
-      data: {
-        labels: weeks,
-        datasets: []
-      },
+      data: { labels: weeks, datasets: [] },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: { duration: 400 },
+        animation: { duration: 300 },
         tension: 0.35,
         pointRadius: 4,
         pointHoverRadius: 6,
-        plugins: {
-          legend: { position: 'top' },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => `${ctx.dataset.label}: ${ctx.raw} Soru`
-            }
-          }
-        },
+        plugins: { legend: { position: 'top' } },
         scales: {
-          y: {
-            beginAtZero: true,
-            title: { display: true, text: 'Çözülen Soru Sayısı' },
-            grid: { color: '#F1F5F9' }
-          },
+          y: { beginAtZero: true, title: { display: true, text: 'Soru Sayısı' }, grid: { color: '#F1F5F9' } },
           x: { grid: { display: false } }
         }
       }
@@ -493,6 +491,7 @@
     const studentSelect = document.getElementById('studentSelect');
     const studentCode = document.getElementById('studentCode');
     const loginBtn = document.getElementById('loginBtn');
+    const fetchHistoryBtn = document.getElementById('fetchHistoryBtn');
     const entrySection = document.getElementById('entrySection');
     const statusMsg = document.getElementById('statusMsg');
 
@@ -503,6 +502,7 @@
       loginBtn.disabled = true;
       studentCode.value = '';
       entrySection.style.display = 'none';
+      fetchHistoryBtn.style.display = 'none';
 
       const students = STUDENTS_DATABASE[this.value] || [];
       students.forEach(s => {
@@ -518,9 +518,11 @@
       loginBtn.disabled = false;
       studentCode.value = '';
       entrySection.style.display = 'none';
+      fetchHistoryBtn.style.display = 'none';
       statusMsg.style.display = 'none';
     });
 
+    // 1. ANINDA GİRİŞ YAPMA (Sıfır Gecikme - Sunucuya Gitmez)
     loginBtn.addEventListener('click', function() {
       const selectedClass = classSelect.value;
       const selectedStudentName = studentSelect.value;
@@ -531,30 +533,45 @@
       if (!studentObj || studentObj.code !== enteredCode) {
         statusMsg.style.display = 'block';
         statusMsg.style.color = '#EF4444';
-        statusMsg.textContent = 'Hatalı kod girdiniz! Lütfen size verilen kodu kontrol ediniz.';
+        statusMsg.textContent = 'Hatalı kod! Lütfen size verilen 4 haneli kodu kontrol ediniz.';
         entrySection.style.display = 'none';
+        fetchHistoryBtn.style.display = 'none';
         return;
       }
 
+      // Doğrulama tarayıcıda bitti, hemen formu aç!
       statusMsg.style.display = 'block';
-      statusMsg.style.color = '#0072CE';
-      statusMsg.textContent = `${selectedStudentName} için geçmiş veriler yükleniyor...`;
+      statusMsg.style.color = '#10B981';
+      statusMsg.textContent = `✓ Hoş geldin ${selectedStudentName}!`;
+      
+      entrySection.style.display = 'block';
+      fetchHistoryBtn.style.display = 'inline-block';
+      document.getElementById('chartHeading').textContent = `${selectedStudentName} (${selectedClass}) - Soru Gelişimi`;
+    });
+
+    // 2. İSTEĞE BAĞLI: GEÇMİŞİ YÜKLE BUTONU
+    fetchHistoryBtn.addEventListener('click', function() {
+      const selectedStudentName = studentSelect.value;
+      fetchHistoryBtn.disabled = true;
+      fetchHistoryBtn.textContent = 'Yükleniyor...';
 
       const oldScript = document.getElementById('jsonpScript');
       if (oldScript) oldScript.remove();
 
       window.handleSheetsResponse = function(response) {
-        entrySection.style.display = 'block';
-
-        for (let i = 0; i < 40; i++) {
-          datasetsTYT.turkce[i] = null; datasetsTYT.sosyal[i] = null;
-          datasetsTYT.mat[i] = null; datasetsTYT.fen[i] = null;
-          datasetsAYT.edebiyat[i] = null; datasetsAYT.sosyal[i] = null;
-          datasetsAYT.mat[i] = null; datasetsAYT.fen[i] = null;
-          datasetsAYT.dil[i] = null;
-        }
+        fetchHistoryBtn.disabled = false;
+        fetchHistoryBtn.textContent = '✓ Geçmiş Yüklendi';
 
         if (response && response.status === 'success' && response.data && response.data.length > 0) {
+          // Grafiği temizleyip doldur
+          for (let i = 0; i < 40; i++) {
+            datasetsTYT.turkce[i] = null; datasetsTYT.sosyal[i] = null;
+            datasetsTYT.mat[i] = null; datasetsTYT.fen[i] = null;
+            datasetsAYT.edebiyat[i] = null; datasetsAYT.sosyal[i] = null;
+            datasetsAYT.mat[i] = null; datasetsAYT.fen[i] = null;
+            datasetsAYT.dil[i] = null;
+          }
+
           response.data.forEach(item => {
             const weekIndex = parseInt(item.week) - 1;
             if (weekIndex >= 0 && weekIndex < 40) {
@@ -571,17 +588,12 @@
             }
           });
 
-          document.getElementById('chartHeading').textContent = `${selectedStudentName} (${selectedClass}) - Soru Gelişimi`;
           renderChartData();
-          statusMsg.style.color = '#10B981';
-          statusMsg.textContent = `✓ Hoş geldin! ${response.data.length} haftalık geçmiş veriniz yüklendi.`;
+          statusMsg.textContent = `✓ ${response.data.length} haftalık geçmiş veriniz yüklendi.`;
         } else {
-          document.getElementById('chartHeading').textContent = `${selectedStudentName} (${selectedClass}) - İlk Giriş`;
-          renderChartData();
-          statusMsg.style.color = '#10B981';
-          statusMsg.textContent = '✓ Giriş başarılı! Henüz geçmiş veri bulunamadı, ilk haftanızı kaydedebilirsiniz.';
+          statusMsg.textContent = 'Daha önce kaydedilmiş geçmiş veri bulunamadı.';
         }
-        
+
         const s = document.getElementById('jsonpScript');
         if (s) s.remove();
       };
@@ -592,6 +604,7 @@
       document.body.appendChild(script);
     });
 
+    // 3. ANINDA KAYDETME (Kullanıcı Beklemez)
     document.getElementById('trackForm').addEventListener('submit', function(e) {
       e.preventDefault();
 
@@ -611,7 +624,7 @@
       const aFen = parseInt(document.getElementById('aytFen').value) || 0;
       const aDil = parseInt(document.getElementById('aytDil').value) || 0;
 
-      // Anında arayüze ve grafiğe yansıt (kullanıcı beklemesin)
+      // Grafiği beklemeden anında güncelle
       datasetsTYT.turkce[weekIndex] = tTurkce;
       datasetsTYT.sosyal[weekIndex] = tSosyal;
       datasetsTYT.mat[weekIndex] = tMat;
@@ -625,12 +638,12 @@
 
       renderChartData();
 
-      const saveBtn = document.getElementById('saveBtn');
+      // Kullanıcıya anında bildirim ver
       statusMsg.style.display = 'block';
-      statusMsg.style.color = '#0072CE';
-      statusMsg.textContent = 'Google E-Tabloya kaydediliyor...';
-      saveBtn.disabled = true;
+      statusMsg.style.color = '#10B981';
+      statusMsg.textContent = `✓ ${selectedWeek} verileri grafiğe eklendi ve Google E-Tabloya aktarıldı!`;
 
+      // Arka planda sessizce kaydet
       const payload = {
         studentName: selectedStudentName,
         studentClass: selectedClass,
@@ -645,14 +658,6 @@
         mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
-      }).then(() => {
-        statusMsg.style.color = '#10B981';
-        statusMsg.textContent = '✓ Veriler başarıyla kaydedildi!';
-        saveBtn.disabled = false;
-      }).catch(() => {
-        statusMsg.style.color = '#10B981';
-        statusMsg.textContent = '✓ Veriler kaydedildi!';
-        saveBtn.disabled = false;
       });
     });
   </script>

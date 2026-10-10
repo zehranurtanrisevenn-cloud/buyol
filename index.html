@@ -316,7 +316,6 @@
   </div>
 
   <script>
-    // Yeni oluşturduğunuz güncel Google Apps Script Web Uygulaması URL'si
     const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbwRk2kARgDoeBoFgEhI-tuaU_CLuiM5fA2OWu95rR-wD4-dOUxLxM7TCp0pnJOTNCBb/exec";
 
     const STUDENTS_DATABASE = {
@@ -523,7 +522,7 @@
       statusMsg.style.display = 'none';
     });
 
-    // 1. HIZLI GİRİŞ (Tarayıcıda anında doğrulanır)
+    // 1. GİRİŞ YAP
     loginBtn.addEventListener('click', function() {
       const selectedClass = classSelect.value;
       const selectedStudentName = studentSelect.value;
@@ -549,7 +548,7 @@
       document.getElementById('chartHeading').textContent = `${selectedStudentName} (${selectedClass}) - Soru Gelişimi`;
     });
 
-    // 2. İSTEĞE BAĞLI GEÇMİŞİ GETİR
+    // 2. GEÇMİŞİ GETİR (JSONP - Okuma)
     fetchHistoryBtn.addEventListener('click', function() {
       const selectedStudentName = studentSelect.value;
       fetchHistoryBtn.disabled = true;
@@ -599,11 +598,19 @@
 
       const script = document.createElement('script');
       script.id = 'jsonpScript';
-      script.src = `${GOOGLE_SHEETS_URL}?name=${encodeURIComponent(selectedStudentName)}&callback=handleSheetsResponse`;
+      script.src = `${GOOGLE_SHEETS_URL}?action=read&name=${encodeURIComponent(selectedStudentName)}&callback=handleSheetsResponse`;
       document.body.appendChild(script);
     });
 
-    // 3. ANINDA VE KESİN KAYDETME (FormData formatında Google E-Tabloya iletir)
+    // 3. KESİN VERİ KAYDETME (JSONP - Yazma: Sıfır CORS Sorunu!)
+    window.handleSaveResponse = function(res) {
+      statusMsg.style.display = 'block';
+      statusMsg.style.color = '#10B981';
+      statusMsg.textContent = '✓ Veriler başarıyla Google E-Tabloya yazıldı!';
+      const s = document.getElementById('jsonpSaveScript');
+      if (s) s.remove();
+    };
+
     document.getElementById('trackForm').addEventListener('submit', function(e) {
       e.preventDefault();
 
@@ -623,7 +630,7 @@
       const aFen = parseInt(document.getElementById('aytFen').value) || 0;
       const aDil = parseInt(document.getElementById('aytDil').value) || 0;
 
-      // Anında grafiğe yansıt
+      // Grafiği yerel olarak güncelle
       datasetsTYT.turkce[weekIndex] = tTurkce;
       datasetsTYT.sosyal[weekIndex] = tSosyal;
       datasetsTYT.mat[weekIndex] = tMat;
@@ -638,29 +645,35 @@
       renderChartData();
 
       statusMsg.style.display = 'block';
-      statusMsg.style.color = '#10B981';
-      statusMsg.textContent = `✓ ${selectedWeek} verileri başarıyla kaydedildi!`;
+      statusMsg.style.color = '#0072CE';
+      statusMsg.textContent = 'Google E-Tabloya kaydediliyor...';
 
-      // FormData ile Google Apps Script'e gönderim
-      const formData = new FormData();
-      formData.append('studentName', selectedStudentName);
-      formData.append('studentClass', selectedClass);
-      formData.append('week', selectedWeek);
-      formData.append('tytTurkce', tTurkce);
-      formData.append('tytSosyal', tSosyal);
-      formData.append('tytMat', tMat);
-      formData.append('tytFen', tFen);
-      formData.append('aytEdebiyat', aEdebiyat);
-      formData.append('aytSosyal', aSosyal);
-      formData.append('aytMat', aMat);
-      formData.append('aytFen', aFen);
-      formData.append('aytDil', aDil);
+      // Eski kayıt scriptini temizle
+      const oldScript = document.getElementById('jsonpSaveScript');
+      if (oldScript) oldScript.remove();
 
-      fetch(GOOGLE_SHEETS_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: formData
+      // Parametreleri URL'e gömerek JSONP ile kaydet
+      const params = new URLSearchParams({
+        action: 'save',
+        studentName: selectedStudentName,
+        studentClass: selectedClass,
+        week: selectedWeek,
+        tytTurkce: tTurkce,
+        tytSosyal: tSosyal,
+        tytMat: tMat,
+        tytFen: tFen,
+        aytEdebiyat: aEdebiyat,
+        aytSosyal: aSosyal,
+        aytMat: aMat,
+        aytFen: aFen,
+        aytDil: aDil,
+        callback: 'handleSaveResponse'
       });
+
+      const script = document.createElement('script');
+      script.id = 'jsonpSaveScript';
+      script.src = `${GOOGLE_SHEETS_URL}?${params.toString()}`;
+      document.body.appendChild(script);
     });
   </script>
 </body>

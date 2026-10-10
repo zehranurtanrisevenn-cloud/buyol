@@ -316,7 +316,8 @@
   </div>
 
   <script>
-    const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbwRk2kARgDoeBoFgEhI-tuaU_CLuiM5fA2OWu95rR-wD4-dOUxLxM7TCp0pnJOTNCBb/exec";
+    // Yeni alınan ve doğrudan E-Tablonuza bağlı Apps Script URL'si
+    const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbreunVIjPVF4Gtj4-lqXRKCSPvO6iTxA9_B9gB24ofZQaIxxuT34IQgYuaVLs60ZQK/exec";
 
     const STUDENTS_DATABASE = {
       "12-A Proje": [
@@ -548,7 +549,7 @@
       document.getElementById('chartHeading').textContent = `${selectedStudentName} (${selectedClass}) - Soru Gelişimi`;
     });
 
-    // 2. GEÇMİŞİ GETİR (JSONP - Okuma)
+    // 2. GEÇMİŞİ GETİR (Okuma)
     fetchHistoryBtn.addEventListener('click', function() {
       const selectedStudentName = studentSelect.value;
       fetchHistoryBtn.disabled = true;
@@ -602,7 +603,7 @@
       document.body.appendChild(script);
     });
 
-    // 3. KESİN VERİ KAYDETME (JSONP - Yazma: Sıfır CORS Sorunu!)
+    // 3. KESİN VERİ KAYDETME (CORS Engeline Takılmayan JSONP Kaydı)
     window.handleSaveResponse = function(res) {
       statusMsg.style.display = 'block';
       statusMsg.style.color = '#10B981';
@@ -630,7 +631,7 @@
       const aFen = parseInt(document.getElementById('aytFen').value) || 0;
       const aDil = parseInt(document.getElementById('aytDil').value) || 0;
 
-      // Grafiği yerel olarak güncelle
+      // Anında grafiğe yansıt
       datasetsTYT.turkce[weekIndex] = tTurkce;
       datasetsTYT.sosyal[weekIndex] = tSosyal;
       datasetsTYT.mat[weekIndex] = tMat;
@@ -648,11 +649,10 @@
       statusMsg.style.color = '#0072CE';
       statusMsg.textContent = 'Google E-Tabloya kaydediliyor...';
 
-      // Eski kayıt scriptini temizle
       const oldScript = document.getElementById('jsonpSaveScript');
       if (oldScript) oldScript.remove();
 
-      // Parametreleri URL'e gömerek JSONP ile kaydet
+      // Parametreleri URL üzerinden doğrudan gönder
       const params = new URLSearchParams({
         action: 'save',
         studentName: selectedStudentName,

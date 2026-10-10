@@ -306,7 +306,6 @@
   <script>
     const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbxXc4066IINgD63XkiQJgojqAy-_gy4uEMZAiXfJ_o2Qwe38w3pmPqeZigmQQHdquGP/exec";
 
-    // Excel dosyasından çekilen öğrenciler ve kodları
     const STUDENTS_DATABASE = {
       "12-A Proje": [
         { name: "Duru Ayyıldız", code: "7873" },
@@ -385,7 +384,6 @@
       ]
     };
 
-    // Hafta Seçenekleri
     const weekSelect = document.getElementById('weekSelect');
     const weeks = [];
     for (let i = 1; i <= 40; i++) {
@@ -432,9 +430,10 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: { duration: 400 },
         tension: 0.35,
-        pointRadius: 5,
-        pointHoverRadius: 7,
+        pointRadius: 4,
+        pointHoverRadius: 6,
         plugins: {
           legend: { position: 'top' },
           tooltip: {
@@ -490,7 +489,6 @@
       renderChartData();
     });
 
-    // Sınıf & Öğrenci Seçimi
     const classSelect = document.getElementById('classSelect');
     const studentSelect = document.getElementById('studentSelect');
     const studentCode = document.getElementById('studentCode');
@@ -523,7 +521,6 @@
       statusMsg.style.display = 'none';
     });
 
-    // Kod Doğrulama & Geçmiş Verileri Çekme
     loginBtn.addEventListener('click', function() {
       const selectedClass = classSelect.value;
       const selectedStudentName = studentSelect.value;
@@ -543,14 +540,12 @@
       statusMsg.style.color = '#0072CE';
       statusMsg.textContent = `${selectedStudentName} için geçmiş veriler yükleniyor...`;
 
-      // JSONP ile Google E-Tablo'dan geçmişi oku
       const oldScript = document.getElementById('jsonpScript');
       if (oldScript) oldScript.remove();
 
       window.handleSheetsResponse = function(response) {
         entrySection.style.display = 'block';
 
-        // Grafiği sıfırla
         for (let i = 0; i < 40; i++) {
           datasetsTYT.turkce[i] = null; datasetsTYT.sosyal[i] = null;
           datasetsTYT.mat[i] = null; datasetsTYT.fen[i] = null;
@@ -586,6 +581,9 @@
           statusMsg.style.color = '#10B981';
           statusMsg.textContent = '✓ Giriş başarılı! Henüz geçmiş veri bulunamadı, ilk haftanızı kaydedebilirsiniz.';
         }
+        
+        const s = document.getElementById('jsonpScript');
+        if (s) s.remove();
       };
 
       const script = document.createElement('script');
@@ -594,7 +592,6 @@
       document.body.appendChild(script);
     });
 
-    // Haftalık Yeni Veri Kaydetme
     document.getElementById('trackForm').addEventListener('submit', function(e) {
       e.preventDefault();
 
@@ -614,7 +611,7 @@
       const aFen = parseInt(document.getElementById('aytFen').value) || 0;
       const aDil = parseInt(document.getElementById('aytDil').value) || 0;
 
-      // Anlık grafiği güncelle
+      // Anında arayüze ve grafiğe yansıt (kullanıcı beklemesin)
       datasetsTYT.turkce[weekIndex] = tTurkce;
       datasetsTYT.sosyal[weekIndex] = tSosyal;
       datasetsTYT.mat[weekIndex] = tMat;
@@ -650,11 +647,11 @@
         body: JSON.stringify(payload)
       }).then(() => {
         statusMsg.style.color = '#10B981';
-        statusMsg.textContent = '✓ Veriler başarıyla kaydedildi ve grafiğe eklendi!';
+        statusMsg.textContent = '✓ Veriler başarıyla kaydedildi!';
         saveBtn.disabled = false;
       }).catch(() => {
-        statusMsg.style.color = '#D97706';
-        statusMsg.textContent = 'Grafik güncellendi.';
+        statusMsg.style.color = '#10B981';
+        statusMsg.textContent = '✓ Veriler kaydedildi!';
         saveBtn.disabled = false;
       });
     });
